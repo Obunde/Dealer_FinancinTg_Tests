@@ -20,6 +20,8 @@ Faulu onboards Anchor (Maker→Checker; Anchor gets first-time creds by email)
   → Faulu Checker approves Batch Draft → loan status: Repayment Confirmed
 ```
 
+Live app: `https://dealerfinance.emtechhouse.co.ke` (all actors log in at `/login`).
+
 ## Tech stack
 
 | Piece | Choice |
@@ -29,20 +31,47 @@ Faulu onboards Anchor (Maker→Checker; Anchor gets first-time creds by email)
 | Build | Maven (Java 21) |
 | Design pattern | Page Object Model, one package per actor portal area |
 | Reporting | Allure (`mvn allure:serve`) with failure screenshots + Playwright traces |
-| Config | `src/test/resources/config.properties`, overridable by `-D` system properties or env vars |
+| Config | `.env` at project root for URLs/credentials (gitignored); non-secret defaults in `config.properties` |
+
+## Feature status
+
+We verify each feature's locators against the live app (via codegen) before its
+test is a trustworthy pass/fail signal. Current state:
+
+**✅ Verified against the real app**
+- **Login** — all actors (anchor/dealer log in directly; Faulu admin uses an "Admin Sign In" option)
+- **Anchor onboarding** (Faulu Maker: Anchors → + Add Anchor) — wired & correct, **red due to Defect #1**
+- **Dealer recommendation** (Anchor Maker: Dealers → Recommend Dealer) — wired & correct, **red due to Defect #2**
+
+**🟡 Scaffolded — locators NOT yet verified (fail with misleading timeouts until codegen'd)**
+- Bank boarding (System Admin), Program/Offer creation (Faulu Maker),
+  Checker approvals (Bank/Anchor/Dealer), invitation acceptance & offer
+  acceptance (Dealer Maker), loan request (Dealer Maker), disbursement
+  (Faulu Maker), repayment batch upload, and the full E2E journey.
+
+**⚪ Stubbed `@Test` TODOs** — ~54 validation/flow methods throwing `SkipException`,
+each naming the Product Guide section it maps to (show as *skipped* in reports).
+
+### Known defects (tests intentionally left RED as markers)
+| # | Feature | Symptom |
+|---|---|---|
+| 1 | Anchor onboarding | Document-upload dialog never attaches files, so the form never validates and **Submit stays disabled**. |
+| 2 | Recommend Dealer | With all fields validly filled, an **"Error: Something went wrong"** toast fires and **Save Changes stays disabled**. |
 
 ## Folder structure
 
 ```
 src/main/java/com/scf/framework/     ← reusable framework (no test code)
-  config/       ConfigReader (properties + -D + env-var resolution)
-  driver/       PlaywrightFactory (thread-safe browser lifecycle, tracing)
+  config/       ConfigReader (.env + -D + env-var + config.properties resolution)
+  driver/       PlaywrightFactory (thread-safe browser lifecycle, tracing, launch flags)
   enums/        Actor (SYSTEM_ADMIN/BANK/ANCHOR/DEALER), Role (MAKER/CHECKER)
-  models/       Bank, Anchor, Dealer, OfferLetter, LoanRequest records
-  utils/        TestDataFactory (unique, re-runnable entities)
+  models/       Bank, Anchor(name/email/contactNumber/accountNumber),
+                Dealer(name/erpCode/email/contactNumber), OfferLetter, LoanRequest
+  utils/        TestDataFactory (unique, re-runnable entities), TestFiles
   api/          ApiHelper (API-level preconditions & state checks, e.g. limits)
 
 src/test/java/com/scf/
+  Diagnostic.java  standalone browser-launch smoke check (no TestNG/surefire)
   base/         BaseTest (per-test browser, loginAs(actor, role), failure
                 screenshots/traces), RetryAnalyzer, RetryTransformer
   pages/        BasePage + LoginPage + ApprovalQueuePage (shared checker screen)
@@ -53,8 +82,9 @@ src/test/java/com/scf/
     e2e/        EndToEndOnboardingAndLoanCycleTest (9-step journey)
 
 src/test/resources/
-  config.properties      environment URLs + credentials (placeholders!)
-  suites/*.xml           TestNG suites (full, validations, flows, per-actor, e2e)
+  config.properties      non-secret defaults (browser, timeouts); creds live in .env
+  suites/*.xml           TestNG suites (full, validations, flows, per-actor, e2e,
+                         and single-feature *-smoke.xml)
 ```
 
 Each actor package has two test categories:
@@ -65,18 +95,16 @@ Each actor package has two test categories:
 - **`*FlowTest`** — positive/business: maker submits → Pending Approval →
   checker approves/rejects → status and limit assertions.
 
-One test per class is fully implemented to establish the pattern; the rest are
-stubs throwing `SkipException` with a TODO referencing the Product Guide
-section — they show up as *skipped* in reports so remaining coverage is visible.
-
 ## Setup
 
-1. **Java 21** (installed) and **Maven**: `sudo apt install maven`
+1. **Java 21** (installed) and **Maven**. If `mvn` isn't on your PATH, a no-sudo
+   install works: unpack Maven under `~/tools/` and symlink it into `~/.local/bin/mvn`.
 2. Copy `.env.example` to `.env` and fill in the platform URL and credentials
-   (Emtech admin, Faulu maker/checker; Anchor/Dealer once provisioned).
-   `.env` is gitignored — never commit real passwords. Resolution order:
+   (Emtech admin, Faulu maker/checker; Anchor/Dealer once provisioned). `.env`
+   is gitignored — never commit real passwords. All actors share `APP_URL`;
+   per-actor `*_URL` overrides are optional. Resolution order:
    `-D` system property > shell env var > `.env` > `config.properties`.
-3. Download browsers once:
+3. Download the browser once (cached in `~/.cache/ms-playwright`):
    ```bash
    mvn compile exec:java -Dexec.args="install chromium"
    ```
@@ -92,42 +120,93 @@ mvn test -DsuiteXml=src/test/resources/suites/testng-validations.xml
 mvn test -DsuiteXml=src/test/resources/suites/testng-flows.xml
 
 # Single actor
-mvn test -DsuiteXml=src/test/resources/suites/testng-bank.xml      # anchor/dealer/systemadmin likewise
+mvn test -DsuiteXml=src/test/resources/suites/testng-bank.xml   # anchor/dealer/systemadmin likewise
+
+# Single feature (smoke) — verified flows
+mvn test -DsuiteXml=src/test/resources/suites/testng-anchor-smoke.xml         # Faulu Maker creates an anchor
+mvn test -DsuiteXml=src/test/resources/suites/testng-anchor-invite-smoke.xml  # Anchor Maker recommends a dealer
 
 # Full E2E journey only
 mvn test -DsuiteXml=src/test/resources/suites/testng-e2e.xml
 
 # Headed + slow-motion for debugging
-mvn test -Dheadless=false -Dslowmo.ms=250 -DsuiteXml=src/test/resources/suites/testng-e2e.xml
+mvn test -Dheadless=false -Dslowmo.ms=250 -DsuiteXml=src/test/resources/suites/testng-anchor-smoke.xml
 
 # Report
 mvn allure:serve
 ```
 
-Failed tests attach a full-page screenshot to Allure and write a Playwright
-trace to `traces/` — open with:
+> Note: to run one class, use a dedicated `*-smoke.xml` suite. `-Dtest=...` is
+> ignored because the pom sets `suiteXmlFiles`, and `-DsuiteXml=` (empty) errors.
+
+## The codegen loop (how we verify a feature)
+
+Page objects for unverified features hold best-guess locators. To make a
+feature's test trustworthy, record the real flow and paste the output back in:
+
 ```bash
-mvn exec:java -Dexec.args="show-trace traces/<test>-trace.zip"
+mvn compile exec:java -Dexec.args="codegen https://dealerfinance.emtechhouse.co.ke/login"
 ```
+
+Click through the feature (login → nav → open/fill form → submit or, for
+checkers, View → Update Status → Approve/Reject), note the success toast and
+before/after status, then translate the generated Java into the page object.
+Prefer stable locators: e.g. the left-nav buttons are `button.side-buttons`
+with the section text (`manage_accounts Anchors`, `group Dealers`).
+
+## Diagnosing failures
+
+On any failure, `BaseTest` attaches a **full-page screenshot** to the Allure
+results and writes a Playwright **trace**:
+
+```bash
+# See the exact UI at failure (PNG attachment)
+ls target/allure-results/*-attachment      # copy one out and open it
+
+# Step-by-step trace
+mvn exec:java -Dexec.args="show-trace traces/<test>-trace.zip"
+
+# Concise stack/assertion
+cat target/surefire-reports/*.txt
+```
+
+Reading the screenshot is the fastest way to diagnose headless runs (it's how
+Defect #2's "Something went wrong" toast was confirmed).
+
+`Diagnostic.java` isolates browser bring-up from TestNG if a run hangs before any test:
+```bash
+mvn -q test-compile exec:java -Dexec.mainClass=com.scf.Diagnostic -Dexec.classpathScope=test
+```
+
+## Environment notes (Kali / Linux)
+
+Baked into `PlaywrightFactory` / `BaseTest` so runs work out of the box:
+
+- **`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`** on `Playwright.create()` — Playwright-Java
+  otherwise re-verifies browsers on every launch, which hangs here. (Install
+  browsers once with the command in Setup.)
+- **`--no-sandbox --disable-dev-shm-usage`** Chromium launch args.
+- Navigation waits for **`domcontentloaded`**, not `load` — this SPA's background
+  requests keep the `load` event from firing in time.
 
 ## Conventions
 
 - **Groups**: every test carries `{actor}` + `{maker|checker}` + `{validation|flow}`
-  (e.g. `groups = {"bank", "maker", "validation"}`), so any slice can be run
-  with a `<groups>` filter.
-- **Test independence**: `TestDataFactory` gives every run unique entity names/
-  registration numbers, so suites are re-runnable without cleanup.
-- **Locators are placeholders**: page objects use role/label-based locators
-  guessed from the Product Guide. Verify against the real app with
-  `mvn compile exec:java -Dexec.args="codegen https://<portal-url>"` and adjust.
-- **E2E** is strictly sequential (`dependsOnMethods`) and must not run in a
-  parallel test block.
+  (e.g. `groups = {"bank", "maker", "validation"}`), so any slice runs via a `<groups>` filter.
+- **Test independence**: `TestDataFactory` gives every run unique entity data
+  (yopmail emails for Anchor/Dealer so invitation/credential emails can be read later).
+- **Locators**: verified features use real app locators; unverified ones still
+  carry guesses — run the codegen loop above before trusting their results.
+- **E2E** is strictly sequential (`dependsOnMethods`) and must not run in a parallel block.
 
 ## Next steps
 
-- [ ] Fill in real portal URLs and QA credentials
-- [ ] Walk each page object against the live app and fix locators
+- [ ] Wire remaining features' locators via the codegen loop (checkers next)
+- [ ] Report Defects #1 and #2 to the dev team (screenshots in `target/allure-results/`)
+- [ ] Rename OfferLetter → Program concepts to match the app
 - [ ] Implement the `SkipException` stubs (each names its Product Guide section)
-- [ ] Wire `ApiHelper` to the platform's real API for limit/status assertions
-- [ ] Add a mailbox helper if dealer-invite email links are in scope
-- [ ] CI pipeline (run validations + flows on PR, full E2E nightly)
+- [ ] yopmail mailbox helper + forced-password-reset login handling
+- [ ] Repayment batch-upload page object (loanId + totalRepayableAmount template)
+- [ ] Wire `ApiHelper` to the real API for limit/status assertions
+- [ ] CI pipeline (validations + flows on PR, full E2E nightly)
+```

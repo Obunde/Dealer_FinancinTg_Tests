@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Single-test smoke: Anchor Maker recommends a dealer. -->
+<suite name="Dealer Invite Smoke" parallel="none">
+    <test name="Recommend Dealer">
+        <classes>
+            <class name="com.scf.tests.anchor.maker.AnchorMakerFlowTest">
+                <methods>
+                    <include name="shouldSubmitDealerInvitationForApproval"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+</suite>

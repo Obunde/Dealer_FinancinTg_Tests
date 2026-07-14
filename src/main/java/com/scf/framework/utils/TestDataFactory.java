@@ -47,11 +47,12 @@ public final class TestDataFactory {
 
     public static Dealer dealer() {
         String tag = suffix();
+        // yopmail inbox so automation can later open the dealer's invitation email
         return new Dealer(
                 "QA Dealer " + tag,
-                "DLR-" + tag,
-                "qa.dealer." + tag + "@scf.test",
-                FAKER.phoneNumber().cellPhone());
+                tag,
+                "qa.dealer." + tag + "@yopmail.com",
+                "07" + String.format("%08d", Long.parseLong(tag) * 41 % 100_000_000));
     }
 
     public static OfferLetter offerLetter(String dealerName) {

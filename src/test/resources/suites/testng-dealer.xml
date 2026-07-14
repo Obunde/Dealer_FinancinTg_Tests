@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="SCF Dealer Suite" parallel="none">
+    <listeners>
+        <listener class-name="com.scf.base.RetryTransformer"/>
+    </listeners>
+    <test name="Dealer Maker and Checker">
+        <groups>
+            <run>
+                <include name="dealer"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.scf.tests.dealer.*"/>
+        </packages>
+    </test>
+</suite>

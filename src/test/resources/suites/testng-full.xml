@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Full regression: every actor suite in parallel, then the E2E journey alone. -->
+<suite name="SCF Full Regression" parallel="tests" thread-count="4">
+    <listeners>
+        <listener class-name="com.scf.base.RetryTransformer"/>
+    </listeners>
+
+    <test name="System Admin">
+        <packages>
+            <package name="com.scf.tests.systemadmin"/>
+        </packages>
+    </test>
+    <test name="Bank">
+        <packages>
+            <package name="com.scf.tests.bank.*"/>
+        </packages>
+    </test>
+    <test name="Anchor">
+        <packages>
+            <package name="com.scf.tests.anchor.*"/>
+        </packages>
+    </test>
+    <test name="Dealer">
+        <packages>
+            <package name="com.scf.tests.dealer.*"/>
+        </packages>
+    </test>
+    <test name="E2E Journey" parallel="none">
+        <classes>
+            <class name="com.scf.tests.e2e.EndToEndOnboardingAndLoanCycleTest"/>
+        </classes>
+    </test>
+</suite>

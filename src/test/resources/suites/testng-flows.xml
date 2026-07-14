@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- All positive/business-logic flow tests across every actor (E2E excluded — run testng-e2e.xml). -->
+<suite name="SCF Flows Only" parallel="tests" thread-count="4">
+    <listeners>
+        <listener class-name="com.scf.base.RetryTransformer"/>
+    </listeners>
+    <test name="All Flows">
+        <groups>
+            <run>
+                <include name="flow"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.scf.tests.*"/>
+        </packages>
+    </test>
+</suite>

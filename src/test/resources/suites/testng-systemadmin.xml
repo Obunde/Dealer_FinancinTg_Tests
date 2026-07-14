@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="SCF System Admin Suite" parallel="none">
+    <listeners>
+        <listener class-name="com.scf.base.RetryTransformer"/>
+    </listeners>
+    <test name="System Admin">
+        <groups>
+            <run>
+                <include name="systemadmin"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.scf.tests.systemadmin"/>
+        </packages>
+    </test>
+</suite>

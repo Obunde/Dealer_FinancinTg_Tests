@@ -1,0 +1,11 @@
+target/
+allure-results/
+allure-report/
+test-output/
+screenshots/
+traces/
+*.iml
+.idea/
+.vscode/
+.env
+config.local.properties

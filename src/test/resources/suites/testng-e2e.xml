@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- The full cross-actor onboarding + loan cycle journey. Always single-threaded. -->
+<suite name="SCF End-to-End Journey" parallel="none">
+    <listeners>
+        <listener class-name="com.scf.base.RetryTransformer"/>
+    </listeners>
+    <test name="E2E Onboarding and Loan Cycle">
+        <classes>
+            <class name="com.scf.tests.e2e.EndToEndOnboardingAndLoanCycleTest"/>
+        </classes>
+    </test>
+</suite>

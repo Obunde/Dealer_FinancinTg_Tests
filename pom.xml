@@ -24,6 +24,9 @@
 
         <!-- Default suite; override with -DsuiteXml=src/test/resources/suites/<file>.xml -->
         <suiteXml>src/test/resources/suites/testng-full.xml</suiteXml>
+
+        <!-- Default exec main = Playwright CLI (browser install); override with -Dexec.mainClass=... -->
+        <exec.mainClass>com.microsoft.playwright.CLI</exec.mainClass>
     </properties>
 
     <dependencies>
@@ -90,7 +93,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
-                    <mainClass>com.microsoft.playwright.CLI</mainClass>
+                    <mainClass>${exec.mainClass}</mainClass>
                     <classpathScope>test</classpathScope>
                 </configuration>
             </plugin>

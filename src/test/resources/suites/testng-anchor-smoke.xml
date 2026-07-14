@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Single-test smoke: Faulu Maker creates an anchor. -->
+<suite name="Anchor Onboarding Smoke" parallel="none">
+    <test name="Create Anchor">
+        <classes>
+            <class name="com.scf.tests.bank.maker.BankMakerFlowTest">
+                <methods>
+                    <include name="shouldSubmitAnchorOnboardingForApproval"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+</suite>

@@ -1,5 +1,10 @@
 package com.scf.framework.models;
 
-/** A large buyer/corporate onboarded by the Bank (Maker -> Checker). */
-public record Anchor(String name, String registrationNumber, String contactEmail, String contactPhone) {
+/**
+ * A corporate buyer onboarded by Faulu (Maker -> Checker).
+ * Fields mirror the real "+ Add Anchor" form (#anchorDetailsForm):
+ * anchor/business name, email, contact number, account number, plus
+ * document uploads handled by the page object.
+ */
+public record Anchor(String name, String email, String contactNumber, String accountNumber) {
 }

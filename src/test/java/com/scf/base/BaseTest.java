@@ -1,6 +1,7 @@
 package com.scf.base;
 
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.WaitUntilState;
 import com.scf.framework.config.ConfigReader;
 import com.scf.framework.driver.PlaywrightFactory;
 import com.scf.framework.enums.Actor;
@@ -43,7 +44,11 @@ public abstract class BaseTest {
         Page page = PlaywrightFactory.getPage();
         // Drop any previous actor's session so one @Test can switch users (E2E journey).
         PlaywrightFactory.getContext().clearCookies();
-        page.navigate(ConfigReader.get(actor.configKey() + ".url"));
+        // All actors share one login URL (APP_URL); an actor can override with e.g. BANK_URL.
+        // Wait for domcontentloaded, not the full "load" — this is an SPA whose background
+        // requests keep the load event from firing within the timeout.
+        page.navigate(loginUrlFor(actor),
+                new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
         new LoginPage(page).login(
                 ConfigReader.get(credentialPrefix + ".username"),
                 ConfigReader.get(credentialPrefix + ".password"));
@@ -53,5 +58,11 @@ public abstract class BaseTest {
     /** Platform Admin (Emtech) — also a maker/checker pair; defaults to the maker. */
     protected Page loginAsSystemAdmin() {
         return loginAs(Actor.SYSTEM_ADMIN, Role.MAKER);
+    }
+
+    /** Per-actor URL override ({actor}.url) if set, else the shared app.url. */
+    private static String loginUrlFor(Actor actor) {
+        String key = actor.configKey() + ".url";
+        return ConfigReader.getOptional(key).orElseGet(() -> ConfigReader.get("app.url"));
     }
 }

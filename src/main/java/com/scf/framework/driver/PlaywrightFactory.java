@@ -26,12 +26,21 @@ public final class PlaywrightFactory {
     }
 
     public static void initBrowser() {
-        Playwright playwright = Playwright.create();
+        // Playwright-Java re-verifies/installs browsers on every create(). On some
+        // environments (e.g. Kali here) that step hangs trying to reach the network
+        // even though browsers are already cached. Skip it — browsers are installed
+        // once via `mvn compile exec:java -Dexec.args="install chromium"`.
+        Playwright playwright = Playwright.create(new Playwright.CreateOptions()
+                .setEnv(java.util.Map.of("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")));
         PLAYWRIGHT.set(playwright);
 
+        // --no-sandbox / --disable-dev-shm-usage: required on Kali/Linux (and
+        // when running as root or in CI) or Chromium hangs at launch.
         BrowserType.LaunchOptions options = new BrowserType.LaunchOptions()
                 .setHeadless(ConfigReader.getBool("headless"))
-                .setSlowMo(ConfigReader.getInt("slowmo.ms"));
+                .setSlowMo(ConfigReader.getInt("slowmo.ms"))
+                .setTimeout(60_000)
+                .setArgs(java.util.List.of("--no-sandbox", "--disable-dev-shm-usage"));
 
         String browserName = ConfigReader.get("browser").toLowerCase();
         Browser browser = switch (browserName) {

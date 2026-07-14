@@ -37,11 +37,12 @@ public final class TestDataFactory {
 
     public static Anchor anchor() {
         String tag = suffix();
+        // yopmail inbox so automation can later read the operator's first-time credentials email
         return new Anchor(
                 "QA Anchor " + tag,
-                "ANC-" + tag,
-                "qa.anchor." + tag + "@scf.test",
-                FAKER.phoneNumber().cellPhone());
+                "qa.anchor." + tag + "@yopmail.com",
+                "07" + String.format("%08d", Long.parseLong(tag) * 37 % 100_000_000),
+                "1" + tag + "00");
     }
 
     public static Dealer dealer() {

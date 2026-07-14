@@ -93,6 +93,25 @@ public final class ConfigReader {
         return value.trim();
     }
 
+    /** Like {@link #get} but returns empty instead of throwing when the key is absent/blank. */
+    public static java.util.Optional<String> getOptional(String key) {
+        String envKey = toEnvKey(key);
+        String value = System.getProperty(key);
+        if (value == null) {
+            value = System.getenv(envKey);
+        }
+        if (value == null) {
+            value = DOT_ENV.get(envKey);
+        }
+        if (value == null) {
+            value = PROPS.getProperty(key);
+        }
+        if (value == null || value.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(value.trim());
+    }
+
     public static int getInt(String key) {
         return Integer.parseInt(get(key));
     }
